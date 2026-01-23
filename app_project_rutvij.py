@@ -1,6 +1,3 @@
-# ============================================
-# IMPORTS - Libraries we need
-# ============================================
 import streamlit as st
 import pandas as pd
 import plotly.express as px
@@ -9,35 +6,26 @@ from anthropic import Anthropic
 from dotenv import load_dotenv
 import os
 
-# Load environment variables (API key)
 load_dotenv()
 
-# ============================================
-# PAGE CONFIGURATION
-# ============================================
 st.set_page_config(
     page_title="DataSense AI | Analytics Chatbot",
     page_icon="🔴",
     layout="wide",
     initial_sidebar_state="expanded"
 )
-# ============================================
-# CUSTOM CSS - Professional Black & Red Theme
-# ============================================
+
 st.markdown("""
 <style>
-    /* Main background */
     .stApp {
         background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 100%);
     }
     
-    /* Sidebar styling */
     [data-testid="stSidebar"] {
         background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%);
         border-right: 2px solid #dc143c;
     }
     
-    /* Headers */
     h1 {
         color: #dc143c !important;
         font-family: 'Helvetica Neue', sans-serif;
@@ -50,7 +38,6 @@ st.markdown("""
         font-family: 'Helvetica Neue', sans-serif;
     }
     
-    /* Metrics cards */
     [data-testid="stMetricValue"] {
         color: #dc143c !important;
         font-size: 2rem !important;
@@ -61,7 +48,6 @@ st.markdown("""
         color: #ffffff !important;
     }
     
-    /* Buttons */
     .stButton > button {
         background: linear-gradient(90deg, #dc143c 0%, #ff4757 100%);
         color: white;
@@ -78,7 +64,6 @@ st.markdown("""
         box-shadow: 0 6px 20px rgba(220, 20, 60, 0.6);
     }
     
-    /* Chat messages */
     [data-testid="stChatMessage"] {
         background-color: rgba(26, 26, 46, 0.8) !important;
         border-radius: 15px;
@@ -87,7 +72,6 @@ st.markdown("""
         margin: 10px 0;
     }
     
-    /* Input fields */
     .stTextInput > div > div > input {
         background-color: #1a1a2e;
         color: white;
@@ -95,7 +79,6 @@ st.markdown("""
         border-radius: 10px;
     }
     
-    /* File uploader */
     [data-testid="stFileUploader"] {
         background-color: rgba(26, 26, 46, 0.5);
         border: 2px dashed #dc143c;
@@ -103,26 +86,22 @@ st.markdown("""
         padding: 20px;
     }
     
-    /* Dataframe */
     .stDataFrame {
         border: 2px solid #dc143c;
         border-radius: 10px;
     }
     
-    /* Expander */
     .streamlit-expanderHeader {
         background-color: #1a1a2e;
         color: #dc143c !important;
         border-radius: 10px;
     }
     
-    /* Success/Info/Warning boxes */
     .stSuccess {
         background-color: rgba(220, 20, 60, 0.2);
         border-left: 4px solid #dc143c;
     }
     
-    /* Custom card class */
     .metric-card {
         background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
         border-radius: 15px;
@@ -146,16 +125,13 @@ st.markdown("""
         letter-spacing: 2px;
     }
     
-    /* Divider */
     hr {
         border: 1px solid #dc143c;
         opacity: 0.3;
     }
 </style>
 """, unsafe_allow_html=True)
-# ============================================
-# SESSION STATE - Remembers data between reruns
-# ============================================
+
 if "messages" not in st.session_state:
     st.session_state.messages = []
 if "df" not in st.session_state:
@@ -163,9 +139,6 @@ if "df" not in st.session_state:
 if "file_name" not in st.session_state:
     st.session_state.file_name = None
 
-# ============================================
-# HELPER FUNCTIONS
-# ============================================
 def get_data_summary(df):
     """Generate a concise summary of the dataframe for the AI"""
     summary = {
@@ -187,11 +160,8 @@ def create_metric_card(label, value, icon):
         <div class="metric-label">{label}</div>
     </div>
     """
-# ============================================
-# SIDEBAR
-# ============================================
+
 with st.sidebar:
-    # Logo/Title
     st.markdown("""
     <div style="text-align: center; padding: 20px 0;">
         <h1 style="font-size: 2.5rem; margin: 0;">🔴</h1>
@@ -202,7 +172,6 @@ with st.sidebar:
     
     st.markdown("---")
     
-    # File Upload Section
     st.markdown("### 📁 Upload Dataset")
     uploaded_file = st.file_uploader(
         "Drop your CSV or Excel file",
@@ -221,7 +190,6 @@ with st.sidebar:
         except Exception as e:
             st.error(f"Error loading file: {e}")
     
-    # Dataset Info
     if st.session_state.df is not None:
         st.markdown("---")
         st.markdown("### 📊 Dataset Info")
@@ -229,13 +197,11 @@ with st.sidebar:
         st.markdown(f"**Rows:** {len(st.session_state.df):,}")
         st.markdown(f"**Columns:** {len(st.session_state.df.columns)}")
         
-        # Column list
         with st.expander("View Columns"):
             for col in st.session_state.df.columns:
                 dtype = st.session_state.df[col].dtype
                 st.markdown(f"• **{col}** ({dtype})")
     
-    # Footer
     st.markdown("---")
     st.markdown("""
     <div style="text-align: center; color: #666; font-size: 0.8rem;">
@@ -243,11 +209,7 @@ with st.sidebar:
         Powered by Claude AI
     </div>
     """, unsafe_allow_html=True)
-    # ============================================
-# MAIN CONTENT
-# ============================================
 
-# Header
 st.markdown("""
 <div style="text-align: center; padding: 20px 0;">
     <h1>🤖 DataSense AI</h1>
@@ -257,11 +219,9 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# Show content based on whether data is loaded
 if st.session_state.df is not None:
     df = st.session_state.df
     
-    # Metrics Row
     col1, col2, col3, col4 = st.columns(4)
     
     with col1:
@@ -277,7 +237,6 @@ if st.session_state.df is not None:
     
     st.markdown("---")
     
-    # Data Preview Section
     with st.expander("📋 Preview Dataset", expanded=False):
         st.dataframe(
             df.head(10),
@@ -285,7 +244,6 @@ if st.session_state.df is not None:
             hide_index=True
         )
     
-    # Quick Stats for Numeric Columns
     if len(df.select_dtypes(include=['number']).columns) > 0:
         with st.expander("📈 Quick Statistics", expanded=False):
             st.dataframe(
@@ -295,7 +253,6 @@ if st.session_state.df is not None:
     
     st.markdown("---")
     
-    # Chat Section Header
     st.markdown("""
     <h3 style="text-align: center;">💬 Ask Questions About Your Data</h3>
     <p style="text-align: center; color: #666;">
@@ -304,7 +261,6 @@ if st.session_state.df is not None:
     """, unsafe_allow_html=True)
 
 else:
-    # Welcome Screen when no data loaded
     st.markdown("""
     <div style="text-align: center; padding: 50px 20px;">
         <h2 style="color: #dc143c;">Welcome to DataSense AI</h2>
@@ -319,7 +275,6 @@ else:
     </div>
     """, unsafe_allow_html=True)
     
-    # Feature highlights
     col1, col2, col3 = st.columns(3)
     
     with col1:
@@ -348,36 +303,27 @@ else:
             <p style="color: #666; font-size: 0.9rem;">Powered by Claude AI for intelligent responses</p>
         </div>
         """, unsafe_allow_html=True)
-        # ============================================
-# CHAT INTERFACE
-# ============================================
 
-# Display chat history
 for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
         if "figure" in message:
             st.plotly_chart(message["figure"], use_container_width=True)
 
-# Chat input
 if prompt := st.chat_input("Ask about your data..."):
     if st.session_state.df is None:
         st.warning("⚠️ Please upload a dataset first!")
     else:
-        # Add user message
         st.session_state.messages.append({"role": "user", "content": prompt})
         with st.chat_message("user"):
             st.markdown(prompt)
         
-        # Generate AI response
         with st.chat_message("assistant"):
             with st.spinner("🔍 Analyzing..."):
                 try:
-                    # Prepare context
                     df = st.session_state.df
                     data_summary = get_data_summary(df)
                     
-                    # System prompt for Claude
                     system_prompt = """You are DataSense AI, a professional data analyst assistant.
 
 RULES:
@@ -386,18 +332,17 @@ RULES:
 3. Always use the variable name 'df' for the dataframe
 4. Store the figure in a variable called 'fig'
 5. Use the template='plotly_dark' for dark theme charts
-6. Use color_discrete_sequence=['#dc143c', '#ff6b6b', '#ff8e8e'] for colors
+6. Use color_discrete_sequence=['dc143c', 'ff6b6b', 'ff8e8e'] for colors
 7. Format code in ```python blocks
 8. Keep explanations brief but insightful
 
 EXAMPLE CHART CODE:
-````python
+```python
 fig = px.bar(df, x='column', y='value', template='plotly_dark',
-             color_discrete_sequence=['#dc143c'])
+             color_discrete_sequence=['dc143c'])
 fig.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)')
 ```"""
                     
-                    # Call Claude API
                     client = Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
                     
                     response = client.messages.create(
@@ -412,7 +357,6 @@ fig.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)')
                     answer = response.content[0].text
                     st.markdown(answer)
                     
-                    # Execute visualization code if present
                     fig = None
                     if "```python" in answer:
                         code = answer.split("```python")[1].split("```")[0]
@@ -431,7 +375,6 @@ fig.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)')
                         except Exception as e:
                             st.error(f"⚠️ Could not render chart: {e}")
                     
-                    # Save to history
                     message_data = {"role": "assistant", "content": answer}
                     if fig:
                         message_data["figure"] = fig
